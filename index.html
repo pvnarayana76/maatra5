@@ -3,304 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hindi Varnamala Master</title>
+    <title>Akshara Alchemist - Classroom Pro</title>
     <style>
-        :root {
-            --primary: #5c67e7;
-            --success: #00b894;
-            --gold: #f1c40f;
-            --bg: #f0f3f7;
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root { --bg: #0f172a; --blue: #38bdf8; --gold: #fbbf24; --white: #f1f5f9; --green: #4ade80; --red: #ef4444; }
+        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; } 
         
-        html, body { 
-            margin: 0; padding: 0; 
-            width: 100%; height: 100%; 
-            overflow: hidden; 
+        body { 
+            height: 100vh; margin: 0; overflow: hidden; background: var(--bg); color: var(--white);
+            font-family: sans-serif; display: flex; flex-direction: column; align-items: center;
         }
 
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: var(--bg);
-            display: flex;
-            flex-direction: column;
-            touch-action: none;
-        }
+        .container { width: 100%; max-width: 420px; height: 100%; display: flex; flex-direction: column; padding: 10px; }
+        
+        header { text-align: center; height: 15%; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
+        .stats-bar { display: flex; justify-content: space-around; font-size: 0.8rem; margin-top: 5px; color: var(--blue); font-weight: bold; }
+        .timer { font-family: monospace; font-size: 1.4rem; color: var(--gold); }
+        
+        #goal-area { text-align: center; height: 12%; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        #target-text { color: var(--gold); font-size: 2.5rem; font-weight: bold; border-bottom: 3px solid #334155; }
+        .speak-btn { background: #1e293b; border: 1px solid var(--blue); border-radius: 50%; width: 45px; height: 45px; font-size: 1.4rem; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
 
-        header {
-            background: white;
-            padding: 0 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            height: 50px;
-            flex-shrink: 0;
-            z-index: 100;
-        }
+        .game-grid { display: grid; grid-template-columns: 80px 1fr 80px; gap: 10px; height: 45%; align-items: center; }
+        .bank { background: rgba(255,255,255,0.05); border: 1px solid var(--blue); border-radius: 12px; height: 95%; display: flex; flex-direction: column; align-items: center; padding: 5px; gap: 8px; overflow-y: auto; }
+        .bank h3 { font-size: 0.6rem; margin: 2px; color: var(--blue); text-transform: uppercase; }
 
-        .game-wrapper {
-            display: flex;
-            flex: 1;
-            gap: 10px;
-            padding: 10px;
-            width: 100%;
-            height: calc(100vh - 50px);
-            overflow: hidden;
-        }
+        .forge-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #forge-circle { width: 100px; height: 100px; border: 4px dashed var(--gold); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2.8rem; background: rgba(251,191,36,0.05); transition: 0.2s; }
 
-        #scrambled-zone, #answer-zone {
-            height: 100%;
-            overflow-y: auto;   
-            overflow-x: hidden; 
-            border-radius: 12px;
-            padding: 10px;
-        }
+        .shake { animation: shake 0.4s; border-color: var(--red) !important; background: rgba(239, 68, 68, 0.2) !important; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
-        #scrambled-zone {
-            width: 35%;
-            background: #dfe6e9;
-            border: 2px dashed #b2bec3;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-            align-content: flex-start;
-        }
+        .tile { width: 60px; height: 60px; background: white; color: #1e293b; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; font-weight: bold; box-shadow: 0 4px 0 #94a3b8; flex-shrink: 0; }
+        .tile.m { background: var(--gold); box-shadow: 0 4px 0 #b45309; }
 
-        #answer-zone {
-            width: 65%;
-            background: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+        #msg { font-size: 0.8rem; color: var(--green); margin-top: 10px; height: 15px; font-weight: bold; }
+        
+        .nav-controls { display: flex; gap: 8px; margin-top: 10px; }
+        .nav-btn { padding: 8px 12px; background: #334155; border: none; border-radius: 20px; color: white; font-weight: bold; font-size: 0.7rem; cursor: pointer; }
+        #next-btn { background: var(--green); color: #0f172a; }
+        .hidden { display: none !important; }
+        
+        #tray-area { height: 15%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .word-tray { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .slot { width: 60px; height: 60px; border: 2px dashed #475569; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 1.6rem; background: rgba(0,0,0,0.2); }
 
-        .row { 
-            display: flex; 
-            flex-wrap: nowrap; 
-            gap: 4px; 
-            align-items: center; 
-            padding: 8px 5px;
-            border-radius: 8px;
-            border: 1px solid #f1f2f6;
-            background: #fafbfc;
-            width: 100%;
-        }
-
-        .row-label { 
-            width: 65px; 
-            font-size: 0.6rem; 
-            font-weight: bold; 
-            color: #95a5a6; 
-            text-transform: uppercase;
-            flex-shrink: 0;
-        }
-
-        .tile, .slot {
-            width: min(8.5vw, 55px); 
-            height: min(8.5vw, 55px);
-            border-radius: 6px;
-            flex-shrink: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .tile {
-            background: var(--primary);
-            color: white;
-            cursor: grab;
-            font-weight: bold;
-            box-shadow: 0 3px 0 #3b44b1;
-            font-size: min(4.5vw, 24px);
-            user-select: none;
-            z-index: 10;
-        }
-
-        .slot { background: #f1f2f6; border: 1.5px solid #dfe6e9; }
-        .slot .tile { width: 100%; height: 100%; box-shadow: none; }
-        .tile.correct { background: var(--success); cursor: default; }
-        .row-complete { border-color: var(--gold); background: rgba(241, 196, 15, 0.05); }
-
-        @media (max-width: 700px) and (orientation: portrait) {
-            .game-wrapper { flex-direction: column; }
-            #scrambled-zone { width: 100%; height: 35%; }
-            #answer-zone { width: 100%; height: 65%; }
-            .tile, .slot { width: 11vw; height: 11vw; }
-            .tile { font-size: 5.5vw; }
-            .row-label { width: 55px; }
-        }
-
-        #modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
-        .modal { background: white; padding: 25px; border-radius: 15px; text-align: center; }
-        button { padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        /* MODAL REPORT */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 20px; border: 2px solid var(--blue); width: 85%; max-width: 350px; }
+        .modal h2 { color: var(--gold); margin-bottom: 20px; }
+        .modal p { font-size: 1.2rem; margin: 10px 0; }
+        .reset-btn { margin-top: 20px; padding: 12px 25px; background: var(--green); border: none; border-radius: 30px; font-weight: bold; color: #0f172a; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<header>
-    <div style="font-weight: bold; font-size: 1rem;">हिन्दी Master</div>
-    <div style="display:flex; gap:8px; align-items:center;">
-        <select id="level-select" onchange="initGame()" style="font-size: 0.8rem;">
-            <option value="vowels">Vowels Only</option>
-            <option value="consonants">Consonants Only</option>
-            <option value="full" selected>Full Varnamala</option>
+<div id="report-modal" class="modal">
+    <div class="modal-content">
+        <h2>Shabash! 🌟</h2>
+        <p>Accuracy: <span id="rep-acc">0</span>%</p>
+        <p>Time: <span id="rep-time">00:00</span></p>
+        <p>Skipped: <span id="rep-skip">0</span></p>
+        <button class="reset-btn" onclick="closeModal()">Play Again</button>
+    </div>
+</div>
+
+<div class="container">
+    <header>
+        <div class="timer">⏱️ <span id="clock">00:00</span></div>
+        <div class="stats-bar">
+            <span>✅ SOLVED: <span id="stat-win">0</span></span>
+            <span>⏭️ SKIPPED: <span id="stat-skip">0</span></span>
+        </div>
+        <select id="lvl" onchange="start()" style="margin-top:8px; background:#1e293b; color:white; border:1px solid var(--blue); padding: 4px 8px; border-radius: 5px;">
+            <option value="1">Level 1: Fusion Lab</option>
+            <option value="2">Level 2: Word Smith</option>
         </select>
-        <div id="timer-display" style="font-weight: bold; font-size: 0.85rem; min-width: 60px; text-align: right;">0s</div>
-        <button onclick="initGame()" style="font-size: 0.8rem; padding: 4px 10px;">Reset</button>
-    </div>
-</header>
+    </header>
 
-<div class="game-wrapper">
-    <div id="scrambled-zone"></div>
-    <div id="answer-zone"></div>
+    <div id="goal-area">
+        <button class="speak-btn" onclick="pronounceTarget()">🔊</button>
+        <div id="target-text">...</div>
+    </div>
+
+    <div class="game-grid">
+        <div class="bank" id="v-bank"></div>
+        <div class="forge-zone">
+            <div id="forge-circle" ondragover="e=>e.preventDefault()" ondrop="handleDrop(event)">?</div>
+            <div id="msg">Drag a Vyanjan</div>
+            
+            <div class="nav-controls">
+                <button class="nav-btn" onclick="moveBack()">⬅ Back</button>
+                <button class="nav-btn" id="skip-btn" onclick="skipMove()">Skip ➡</button>
+            </div>
+            <button id="next-btn" class="nav-btn hidden" onclick="moveNext()">Correct! Next →</button>
+        </div>
+        <div class="bank" id="m-bank"></div>
+    </div>
+
+    <div id="tray-area" class="hidden"><div class="word-tray" id="word-tray"></div></div>
 </div>
 
-<div id="modal-overlay">
-    <div class="modal">
-        <h1 style="color:var(--success)">शाबाश!</h1>
-        <p id="final-stats" style="margin-bottom: 20px; font-size: 1.1rem;"></p>
-        <button onclick="initGame()">Play Again</button>
-    </div>
-</div>
+
 
 <script>
-    const data = {
-        vowels: [
-            { label: "Vowels 1", letters: ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ऋ'] },
-            { label: "Vowels 2", letters: ['ए', 'ऐ', 'ओ', 'औ', 'अं', 'अः'] }
-        ],
-        consonants: [
-            { label: "Ka-Varga", letters: ['क', 'ख', 'ग', 'घ', 'ङ'] },
-            { label: "Cha-Varga", letters: ['च', 'छ', 'ज', 'झ', 'ञ'] },
-            { label: "Ta-Varga", letters: ['ट', 'ठ', 'ड', 'ढ', 'ण'] },
-            { label: "Tha-Varga", letters: ['त', 'थ', 'द', 'ध', 'न'] },
-            { label: "Pa-Varga", letters: ['प', 'फ', 'ब', 'भ', 'म'] },
-            { label: "Semi-Vowels", letters: ['य', 'र', 'ल', 'व'] },
-            { label: "Sibilants", letters: ['श', 'ष', 'स', 'ह'] },
-            { label: "Joint", letters: ['क्ष', 'त्र', 'ज्ञ', 'श्र'] }
-        ]
-    };
+    let bridge = { v: "", m: "", dType: "", dVal: "" };
+    let timer = 0, clockInterval = null, idx = 0;
+    let stats = { win: 0, skip: 0 };
+    let currentList = [];
 
-    let seconds = 0, timerInt, totalNeeded = 0, currentCorrect = 0;
+    // --- INTEGRATED 124 WORD DATABASE (SAMPLE SET) ---
+    const allWords = [
+        {w:"अनार", p:["अ", "ना", "र"], v:["न", "र", "म"], m:["ा"]},
+        {w:"आम", p:["आ", "म"], v:["म", "स"], m:["ा"]},
+        {w:"इमली", p:["इ", "म", "ली"], v:["म", "ल", "क"], m:["ी"]},
+        {w:"बाघ", p:["बा", "घ"], v:["ब", "घ", "ल"], m:["ा"]},
+        {w:"केला", p:["के", "ला"], v:["क", "ल", "म"], m:["े", "ा"]},
+        {w:"मछली", p:["म", "छ", "ली"], v:["म", "छ", "ल"], m:["ी"]},
+        {w:"पपीता", p:["प", "पी", "ता"], v:["प", "त", "ल"], m:["ी", "ा"]},
+        {w:"बकरी", p:["ब", "क", "री"], v:["ब", "क", "र"], m:["ी"]},
+        {w:"मोर", p:["मो", "र"], v:["म", "र"], m:["ो"]},
+        {w:"सूरज", p:["सू", "र", "ज"], v:["स", "र", "ज"], m:["ू"]},
+        {w:"गुलाब", p:["गु", "ला", "ब"], v:["ग", "ल", "ब"], m:["ु", "ा"]},
+        {w:"तोता", p:["तो", "ता"], v:["त", "म"], m:["ो", "ा"]}
+    ];
 
-    // --- NEW TIME FORMATTER ---
-    function formatTime(totalSeconds) {
-        const m = Math.floor(totalSeconds / 60);
-        const s = totalSeconds % 60;
-        return m > 0 ? `${m}m ${s}s` : `${s}s`;
+    function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
     }
 
-    function initGame() {
-        document.getElementById('modal-overlay').style.display = 'none';
-        clearInterval(timerInt);
-        seconds = 0; currentCorrect = 0;
-        document.getElementById('timer-display').innerText = "0s";
+    function pronounceTarget() {
+        const text = document.getElementById('target-text').innerText;
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'hi-IN';
+        msg.rate = 0.8;
+        window.speechSynthesis.speak(msg);
+    }
+
+    function start() {
+        idx = 0; stats.win = 0; stats.skip = 0;
+        updateDashboard();
+        const lvl = document.getElementById('lvl').value;
+        currentList = shuffle([...allWords]).slice(0, 10); // Change to 'allWords.length' for full 124
         
-        // ⏱️ UPDATED INTERVAL LOGIC ⏱️
-        timerInt = setInterval(() => { 
-            seconds++; 
-            document.getElementById('timer-display').innerText = formatTime(seconds); 
+        if(clockInterval) clearInterval(clockInterval);
+        timer = 0;
+        clockInterval = setInterval(() => {
+            timer++;
+            let m = Math.floor(timer/60).toString().padStart(2,'0');
+            let s = (timer%60).toString().padStart(2,'0');
+            document.getElementById('clock').innerText = `${m}:${s}`;
         }, 1000);
-
-        const level = document.getElementById('level-select').value;
-        const scrambled = document.getElementById('scrambled-zone');
-        const answer = document.getElementById('answer-zone');
-        scrambled.innerHTML = ''; answer.innerHTML = '';
-
-        let selected = (level === 'vowels') ? data.vowels : (level === 'consonants') ? data.consonants : [...data.vowels, ...data.consonants];
-        let allChars = [];
-
-        selected.forEach(group => {
-            const row = document.createElement('div');
-            row.className = 'row';
-            const label = document.createElement('div');
-            label.className = 'row-label';
-            label.innerText = group.label;
-            row.appendChild(label);
-            group.letters.forEach(char => {
-                allChars.push(char);
-                const slot = document.createElement('div');
-                slot.className = 'slot';
-                slot.dataset.expected = char;
-                slot.ondragover = e => e.preventDefault();
-                slot.ondrop = handleDrop;
-                row.appendChild(slot);
-            });
-            answer.appendChild(row);
-        });
-
-        totalNeeded = allChars.length;
-        allChars.sort(() => Math.random() - 0.5);
-        allChars.forEach(char => {
-            const tile = document.createElement('div');
-            tile.className = 'tile';
-            tile.innerText = char;
-            tile.draggable = true;
-            tile.id = 't-' + Math.random().toString(36).substr(2, 5);
-            tile.ondragstart = e => e.dataTransfer.setData("text", e.target.id);
-            tile.ontouchstart = handleTouchStart;
-            tile.ontouchmove = handleTouchMove;
-            tile.ontouchend = handleTouchEnd;
-            scrambled.appendChild(tile);
-        });
+        load();
     }
+
+    function load() {
+        const lvl = document.getElementById('lvl').value;
+        const d = currentList[idx];
+        const targetPart = d.p.find(p => p.length > 1) || d.p[0];
+        document.getElementById('target-text').innerText = (lvl == "1") ? targetPart : d.w;
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('skip-btn').classList.remove('hidden');
+        document.getElementById('msg').innerText = "Drag a Vyanjan";
+        bridge.v = ""; bridge.m = "";
+        document.getElementById('forge-circle').innerText = "?";
+
+        const vS = shuffle([...d.v]);
+        const mS = shuffle([...d.m]);
+        document.getElementById('v-bank').innerHTML = "<h3>V</h3>";
+        vS.forEach(v => document.getElementById('v-bank').innerHTML += `<div class="tile" draggable="true" ondragstart="hDS('${v}','v')">${v}</div>`);
+        document.getElementById('m-bank').innerHTML = "<h3>M</h3>";
+        mS.forEach(m => document.getElementById('m-bank').innerHTML += `<div class="tile m" draggable="true" ondragstart="hDS('${m}','m')">${m}</div>`);
+
+        const trayA = document.getElementById('tray-area');
+        if(lvl == "2") {
+            trayA.classList.remove('hidden'); document.getElementById('word-tray').innerHTML = "";
+            d.p.forEach(part => {
+                const isBase = (part.length === 1 && !part.match(/[ा-ौ]/));
+                document.getElementById('word-tray').innerHTML += `<div class="slot" ondragover="e=>e.preventDefault()" ondrop="hTD(event, '${part}', ${isBase})">?</div>`;
+            });
+        } else trayA.classList.add('hidden');
+        pronounceTarget();
+    }
+
+    function hDS(v, t) { bridge.dVal = v; bridge.dType = t; }
 
     function handleDrop(e) {
+        e.preventDefault(); const c = document.getElementById('forge-circle');
+        if (bridge.dType === 'v') {
+            bridge.v = bridge.dVal; bridge.m = ""; c.innerText = bridge.v;
+        } else if (bridge.dType === 'm' && bridge.v !== "") {
+            bridge.m = bridge.dVal; c.innerText = bridge.v + bridge.m;
+            if (document.getElementById('lvl').value == "1") {
+                if (c.innerText === document.getElementById('target-text').innerText) victory();
+                else triggerError(c, true);
+            }
+        }
+    }
+
+    function hTD(e, target, isBase) {
         e.preventDefault();
-        const id = e.dataTransfer.getData("text");
-        const tile = document.getElementById(id);
-        const slot = e.target.closest('.slot');
-        if (slot && slot.dataset.expected === tile.innerText) { placeTile(tile, slot); }
+        const val = isBase ? bridge.dVal : (bridge.v + bridge.m);
+        if (val === target) {
+            e.target.innerText = val; e.target.style.background = "rgba(74, 222, 128, 0.4)";
+            if ([...document.querySelectorAll('.slot')].every(s => s.innerText !== "?")) victory();
+            else { bridge.v = ""; bridge.m = ""; document.getElementById('forge-circle').innerText = "?"; }
+        } else triggerError(e.target, true);
     }
 
-    function placeTile(tile, slot) {
-        slot.appendChild(tile);
-        tile.classList.add('correct');
-        tile.draggable = false;
-        tile.style.position = 'static';
-        currentCorrect++;
-        const row = slot.parentElement;
-        if ([...row.querySelectorAll('.slot')].every(s => s.querySelector('.tile.correct'))) row.classList.add('row-complete');
-        
-        if (currentCorrect === totalNeeded) {
-            clearInterval(timerInt);
-            // ⏱️ UPDATED VICTORY STATS ⏱️
-            document.getElementById('final-stats').innerText = `You finished in ${formatTime(seconds)}!`;
-            document.getElementById('modal-overlay').style.display = 'flex';
-        }
+    function triggerError(el, wipe) {
+        el.classList.add('shake');
+        setTimeout(() => {
+            el.classList.remove('shake');
+            if(wipe) { bridge.v = ""; bridge.m = ""; document.getElementById('forge-circle').innerText = "?"; }
+        }, 400);
     }
 
-    let activeTile = null;
-    function handleTouchStart(e) { if(!e.target.classList.contains('correct')) activeTile = e.target; }
-    function handleTouchMove(e) {
-        if (!activeTile) return;
-        let touch = e.touches[0];
-        activeTile.style.position = 'fixed';
-        activeTile.style.left = (touch.clientX - activeTile.offsetWidth / 2) + 'px';
-        activeTile.style.top = (touch.clientY - activeTile.offsetHeight / 2) + 'px';
-        activeTile.style.zIndex = 1000;
-    }
-    function handleTouchEnd(e) {
-        if (!activeTile) return;
-        let touch = e.changedTouches[0];
-        activeTile.style.display = 'none';
-        let target = document.elementFromPoint(touch.clientX, touch.clientY);
-        activeTile.style.display = 'flex';
-        let slot = target ? target.closest('.slot') : null;
-        if (slot && slot.dataset.expected === activeTile.innerText && !slot.hasChildNodes()) {
-            placeTile(activeTile, slot);
-        } else {
-            activeTile.style.position = 'static';
-            document.getElementById('scrambled-zone').appendChild(activeTile);
-        }
-        activeTile = null;
+    function victory() { 
+        stats.win++; updateDashboard();
+        document.getElementById('msg').innerText = "Shabash!"; 
+        document.getElementById('next-btn').classList.remove('hidden');
+        document.getElementById('skip-btn').classList.add('hidden');
     }
 
-    initGame();
+    function skipMove() { stats.skip++; updateDashboard(); moveNext(); }
+    function moveBack() { if(idx > 0) { idx--; load(); } }
+
+    function moveNext() {
+        idx++;
+        if(idx >= currentList.length) showFinalReport();
+        else load();
+    }
+
+    function showFinalReport() {
+        clearInterval(clockInterval);
+        document.getElementById('rep-acc').innerText = Math.round((stats.win / currentList.length) * 100);
+        document.getElementById('rep-time').innerText = document.getElementById('clock').innerText;
+        document.getElementById('rep-skip').innerText = stats.skip;
+        document.getElementById('report-modal').style.display = "flex";
+    }
+
+    function closeModal() {
+        document.getElementById('report-modal').style.display = "none";
+        start();
+    }
+
+    function updateDashboard() {
+        document.getElementById('stat-win').innerText = stats.win;
+        document.getElementById('stat-skip').innerText = stats.skip;
+    }
+
+    start();
 </script>
 </body>
 </html>
