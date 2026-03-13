@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Akshara Alchemist - Integrated Edition</title>
+    <title>Akshara Alchemist - Pro</title>
     <style>
         :root { --bg: #0f172a; --blue: #38bdf8; --gold: #fbbf24; --white: #f1f5f9; --green: #4ade80; --red: #ef4444; }
         * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; } 
@@ -21,20 +21,31 @@
         #target-text { color: var(--gold); font-size: 2.2rem; font-weight: bold; border-bottom: 3px solid #334155; }
 
         .game-grid { display: grid; grid-template-columns: 80px 1fr 80px; gap: 10px; height: 50%; align-items: center; }
-        .bank { background: rgba(255,255,255,0.05); border: 1px solid var(--blue); border-radius: 12px; height: 95%; display: flex; flex-direction: column; align-items: center; padding: 5px; gap: 8px; overflow-y: auto; }
+        .bank { 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--blue); border-radius: 12px;
+            height: 95%; display: flex; flex-direction: column; align-items: center; padding: 5px; gap: 8px; overflow-y: auto;
+        }
         .bank h3 { font-size: 0.6rem; margin: 2px; color: var(--blue); }
 
         .forge-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #forge-circle { width: 110px; height: 110px; border: 4px dashed var(--gold); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 3rem; background: rgba(251,191,36,0.05); transition: all 0.2s; }
+        #forge-circle {
+            width: 110px; height: 110px; border: 4px dashed var(--gold); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; font-size: 3rem;
+            background: rgba(251,191,36,0.05); transition: all 0.2s;
+        }
 
         .shake { animation: shake 0.4s; border-color: var(--red) !important; background: rgba(239, 68, 68, 0.2) !important; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
-        .tile { width: 60px; height: 60px; background: white; color: #1e293b; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; font-weight: bold; box-shadow: 0 4px 0 #94a3b8; flex-shrink: 0; }
+        .tile {
+            width: 60px; height: 60px; background: white; color: #1e293b; border-radius: 10px;
+            display: flex; justify-content: center; align-items: center; font-size: 1.8rem; font-weight: bold;
+            box-shadow: 0 4px 0 #94a3b8; flex-shrink: 0;
+        }
         .tile.m { background: var(--gold); box-shadow: 0 4px 0 #b45309; }
 
         #msg { font-size: 0.8rem; color: var(--green); margin-top: 10px; height: 15px; font-weight: bold; text-align: center; }
-        #next-btn { padding: 10px 20px; background: var(--green); border: none; border-radius: 30px; font-weight: bold; color: #0f172a; margin-top: 5px; cursor: pointer; }
+        #next-btn { padding: 10px 20px; background: var(--green); border: none; border-radius: 30px; font-weight: bold; color: #0f172a; margin-top: 5px; cursor: pointer;}
         .hidden { display: none !important; }
         
         #tray-area { height: 15%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -53,12 +64,12 @@
         </select>
     </header>
 
-    <div id="goal-area"><div id="target-text">लोडिंग...</div></div>
+    <div id="goal-area"><div id="target-text">...</div></div>
 
     <div class="game-grid">
         <div class="bank" id="v-bank"></div>
         <div class="forge-zone">
-            <div id="forge-circle" ondragover="e=>e.preventDefault()" ondrop="handleDrop(event)">?</div>
+            <div id="forge-circle" ondragover="e=>e.preventDefault()" ondrop="handleDrop(event)" draggable="true" ondragstart="handleForgeDrag(event)">?</div>
             <div id="msg">Drag a Vyanjan</div>
             <button id="next-btn" class="hidden" onclick="moveNext()">Next →</button>
         </div>
@@ -69,40 +80,41 @@
 </div>
 
 <script>
-    let bridge = { v: "", m: "", draggingType: "", draggingVal: "" };
+    let bridge = { v: "", m: "", dType: "", dVal: "" };
     let timer = 0, clockInterval = null, idx = 0;
 
-    function playSound(type) {
-        const context = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = context.createOscillator();
-        const gain = context.createGain();
-        if (type === 'success') {
-            osc.frequency.setValueAtTime(523, context.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(880, context.currentTime + 0.1);
-        } else {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(120, context.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(40, context.currentTime + 0.2);
-        }
-        osc.connect(gain); gain.connect(context.destination);
-        osc.start(); osc.stop(context.currentTime + 0.3);
+    function playSound(t) {
+        const c = new (window.AudioContext || window.webkitAudioContext)();
+        const o = c.createOscillator(); const g = c.createGain();
+        if(t==='success'){ o.frequency.setValueAtTime(523,c.currentTime); o.frequency.exponentialRampToValueAtTime(880,c.currentTime+0.1); }
+        else { o.type='sawtooth'; o.frequency.setValueAtTime(120,c.currentTime); o.frequency.exponentialRampToValueAtTime(40,c.currentTime+0.2); }
+        o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+0.3);
     }
 
-    // UPDATED DATA: Imported from our 124-word Picture Match Game
-    const level1Data = [
-        {t:"ना", v:["न", "म"], m:["ा", "ि"]}, // From अनार
-        {t:"मि", v:["म", "न"], m:["ि", "ी"]}, // From इमली
-        {t:"के", v:["क", "ब"], m:["े", "ै"]}, // From केला
-        {t:"से", v:["स", "ह"], m:["े", "ै"]}, // From सेब
-        {t:"ली", v:["ल", "छ"], m:["ि", "ी"]}  // From मछली
+    const l1Data = [
+        {t:"की",v:["क","ल"],m:["ा","ी"]}, {t:"पु",v:["प","स"],m:["ु","ू"]}, {t:"दे",v:["द","म"],m:["े","ै"]},
+        {t:"मो",v:["म","न"],m:["ो","ौ"]}, {t:"रि",v:["र","ज"],m:["ि","ी"]}, {t:"सा",v:["स","प"],m:["ा","ु"]},
+        {t:"नू",v:["न","त"],m:["ु","ू"]}, {t:"है",v:["ह","क"],m:["े","ै"]}, {t:"चो",v:["च","ल"],m:["ो","ौ"]},
+        {t:"बी",v:["ब","प"],m:["ि","ी"]}, {t:"टा",v:["ट","ड"],m:["ा","े"]}, {t:"गौ",v:["ग","ज"],m:["ो","ौ"]},
+        {t:"खि",v:["ख","ग"],m:["ि","ी"]}, {t:"पे",v:["प","ब"],m:["े","ै"]}, {t:"धु",v:["ध","थ"],m:["ु","ू"]},
+        {t:"लै",v:["ल","व"],m:["े","ै"]}, {t:"नो",v:["न","म"],m:["ो","ा"]}, {t:"सी",v:["स","श"],m:["ि","ी"]},
+        {t:"कृ",v:["क","भ"],m:["ृ","ु"]}, {t:"थै",v:["थ","ट"],m:["े","ै"]}, {t:"जो",v:["ज","झ"],m:["ो","ौ"]},
+        {t:"दू",v:["द","ब"],m:["ु","ू"]}, {t:"मी",v:["म","ल"],m:["ि","ी"]}, {t:"रा",v:["र","त"],m:["ा","ि"]}, {t:"फू",v:["फ","प"],m:["ु","ू"]}
     ];
 
-    const level2Data = [
-        {w:"अनार", p:["अ", "ना", "र"], v:["न", "र"], m:["ा"]},
-        {w:"इमली", p:["इ", "म", "ली"], v:["म", "ल"], m:["ी"]},
-        {w:"केला", p:["के", "ला"], v:["क", "ल"], m:["े", "ा"]},
-        {w:"बाघ", p:["बा", "घ"], v:["ब", "घ"], m:["ा"]},
-        {w:"मछली", p:["म", "छ", "ली"], v:["म", "छ", "ल"], m:["ी"]}
+    const l2Data = [
+        {w:"काम",p:["का","म"],v:["क","म"],m:["ा"]}, {w:"किताब",p:["कि","ता","ब"],v:["क","त","ब"],m:["ि","ा"]},
+        {w:"मछली",p:["म","छ","ली"],v:["म","छ","ल"],m:["ी"]}, {w:"गुलाब",p:["गु","ला","ब"],v:["ग","ल","ब"],m:["ु","ा"]},
+        {w:"पेड़",p:["पे","ड़"],v:["प","ड़"],m:["े"]}, {w:"सूरज",p:["सू","र","ज"],v:["स","र","ज"],m:["ू"]},
+        {w:"टोपी",p:["टो","पी"],v:["ट","प"],m:["ो","ी"]}, {w:"पौधा",p:["पौ","धा"],v:["प","ध"],m:["ौ","ा"]},
+        {w:"हाथी",p:["हा","थी"],v:["ह","थ"],m:["ा","ी"]}, {w:"चिड़िया",p:["चि","ड़ि","या"],v:["च","ड़","य"],m:["ि","ा"]},
+        {w:"रेल",p:["रे","ल"],v:["र","ल"],m:["े"]}, {w:"बैल",p:["बै","ल"],v:["ब","ल"],m:["ै"]},
+        {w:"कौआ",p:["कौ","आ"],v:["क","आ"],m:["ौ"]}, {w:"माला",p:["मा","ला"],v:["म","ल"],m:["ा"]},
+        {w:"साधु",p:["सा","धु"],v:["स","ध"],m:["ा","ु"]}, {w:"जूता",p:["जू","ता"],v:["ज","त"],m:["ू","ा"]},
+        {w:"केला",p:["के","ला"],v:["क","ल"],m:["े","ा"]}, {w:"सैनिक",p:["सै","नि","क"],v:["स","न","क"],m:["ै","ि"]},
+        {w:"मोर",p:["मो","र"],v:["म","र"],m:["ो"]}, {w:"कृषि",p:["कृ","षि"],v:["क","ष"],m:["ृ","ि"]},
+        {w:"सेब",p:["से","ब"],v:["स","ब"],m:["े"]}, {w:"पैसा",p:["पै","सा"],v:["प","स"],m:["ै","ा"]},
+        {w:"ढोल",p:["ढो","ल"],v:["ढ","ल"],m:["ो"]}, {w:"नौका",p:["नौ","का"],v:["न","क"],m:["ौ","ा"]}, {w:"वृक्ष",p:["वृ","क्ष"],v:["व","क्ष"],m:["ृ"]}
     ];
 
     function start() {
@@ -117,72 +129,58 @@
 
     function load() {
         const lvl = document.getElementById('lvl').value;
-        const d = (lvl == "1") ? level1Data[idx] : level2Data[idx];
+        const d = (lvl == "1") ? l1Data[idx] : l2Data[idx];
         document.getElementById('target-text').innerText = (lvl == "1") ? d.t : d.w;
         document.getElementById('next-btn').classList.add('hidden');
         document.getElementById('msg').innerText = "Drag a Vyanjan";
         bridge.v = ""; bridge.m = "";
         document.getElementById('forge-circle').innerText = "?";
-
         document.getElementById('v-bank').innerHTML = "<h3>VYANJAN</h3>";
-        d.v.forEach(v => document.getElementById('v-bank').innerHTML += `<div class="tile" draggable="true" ondragstart="handleDragStart('${v}','v')">${v}</div>`);
-        
+        d.v.forEach(v => document.getElementById('v-bank').innerHTML += `<div class="tile" draggable="true" ondragstart="hDS('${v}','v')">${v}</div>`);
         document.getElementById('m-bank').innerHTML = "<h3>MATRA</h3>";
-        d.m.forEach(m => document.getElementById('m-bank').innerHTML += `<div class="tile m" draggable="true" ondragstart="handleDragStart('${m}','m')">${m}</div>`);
-
-        const trayArea = document.getElementById('tray-area');
-        const tray = document.getElementById('word-tray');
+        d.m.forEach(m => document.getElementById('m-bank').innerHTML += `<div class="tile m" draggable="true" ondragstart="hDS('${m}','m')">${m}</div>`);
+        const trayA = document.getElementById('tray-area');
         if(lvl == "2") {
-            trayArea.classList.remove('hidden'); tray.innerHTML = "";
-            d.p.forEach(part => {
-                // If the part is a base vowel (like अ or इ), it doesn't need forging
-                const isBase = (part === "अ" || part === "इ" || part === "म" || part === "र" || part === "घ" || part === "छ");
-                tray.innerHTML += `<div class="slot" ondragover="e=>e.preventDefault()" ondrop="handleTrayDrop(event, '${part}', ${isBase})">?</div>`;
-            });
-        } else trayArea.classList.add('hidden');
+            trayA.classList.remove('hidden'); document.getElementById('word-tray').innerHTML = "";
+            d.p.forEach(part => document.getElementById('word-tray').innerHTML += `<div class="slot" ondragover="e=>e.preventDefault()" ondrop="hTD(event, '${part}')">?</div>`);
+        } else trayA.classList.add('hidden');
     }
 
-    function handleDragStart(val, type) { bridge.draggingVal = val; bridge.draggingType = type; }
+    function hDS(v, t) { bridge.dVal = v; bridge.dType = t; }
+    function handleForgeDrag(e) { bridge.dVal = bridge.v + bridge.m; bridge.dType = "f"; }
 
     function handleDrop(e) {
-        e.preventDefault(); const circle = document.getElementById('forge-circle'); circle.classList.remove('shake');
-        if (bridge.draggingType === 'v') {
-            bridge.v = bridge.draggingVal; bridge.m = ""; circle.innerText = bridge.v;
-            document.getElementById('msg').innerText = "Now add Matra";
-        } else if (bridge.draggingType === 'm' && bridge.v !== "") {
-            bridge.m = bridge.draggingVal; circle.innerText = bridge.v + bridge.m;
+        e.preventDefault(); const c = document.getElementById('forge-circle'); c.classList.remove('shake');
+        if (bridge.dType === 'v') { bridge.v = bridge.dVal; bridge.m = ""; c.innerText = bridge.v; document.getElementById('msg').innerText = "Now add Matra"; }
+        else if (bridge.dType === 'm' && bridge.v !== "") {
+            bridge.m = bridge.dVal; c.innerText = bridge.v + bridge.m;
             if (document.getElementById('lvl').value == "1") {
-                if (circle.innerText === level1Data[idx].t) victory();
-                else triggerError(circle, true);
+                if (c.innerText === l1Data[idx].t) victory();
+                else triggerError(c, true);
             }
         }
     }
 
-    function handleTrayDrop(e, target, isBase) {
-        e.preventDefault();
-        // If it's a base letter, student can drag vyanjan directly. If it's a combo, they need the forge.
-        const val = isBase ? bridge.draggingVal : (bridge.v + bridge.m);
-        
-        if (val === target) {
-            e.target.innerText = val; e.target.style.background = "rgba(74, 222, 128, 0.2)"; e.target.style.borderColor = "var(--green)";
+    function hTD(e, target) {
+        e.preventDefault(); const combo = bridge.v + bridge.m;
+        if (combo === target) {
+            e.target.innerText = combo; e.target.style.background = "rgba(74, 222, 128, 0.2)"; e.target.style.borderColor = "var(--green)";
             const slots = [...document.querySelectorAll('.slot')];
             if (slots.every(s => s.innerText !== "?")) victory();
             else { bridge.v = ""; bridge.m = ""; document.getElementById('forge-circle').innerText = "?"; }
-        } else {
-            triggerError(e.target, true); document.getElementById('msg').innerText = "Failed! Try again.";
-        }
+        } else { triggerError(e.target, true); document.getElementById('msg').innerText = "Wrong part!"; }
     }
 
     function triggerError(el, wipe) {
         playSound('error'); el.classList.add('shake');
         setTimeout(() => {
             el.classList.remove('shake');
-            if(wipe) { bridge.v = ""; bridge.m = ""; document.getElementById('forge-circle').innerText = "?"; }
+            if(wipe) { bridge.v = ""; bridge.m = ""; document.getElementById('forge-circle').innerText = "?"; document.getElementById('msg').innerText = "Failed!"; }
         }, 400);
     }
 
     function victory() { playSound('success'); document.getElementById('msg').innerText = "Shabash!"; document.getElementById('next-btn').classList.remove('hidden'); }
-    function moveNext() { idx++; const max = (document.getElementById('lvl').value == "1") ? level1Data.length : level2Data.length; if(idx >= max) idx = 0; load(); }
+    function moveNext() { idx++; const max = (document.getElementById('lvl').value == "1") ? l1Data.length : l2Data.length; if(idx >= max) idx = 0; load(); }
     start();
 </script>
 </body>
