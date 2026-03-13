@@ -69,7 +69,7 @@
     <div class="game-grid">
         <div class="bank" id="v-bank"></div>
         <div class="forge-zone">
-            <div id="forge-circle" ondragover="e=>e.preventDefault()" ondrop="handleDrop(event)" draggable="true" ondragstart="handleForgeDrag(event)">?</div>
+            <div id="forge-circle" ondragover="allowDrop(event)" ondrop="handleDrop(event)" draggable="true" ondragstart="handleForgeDrag(event)">?</div>
             <div id="msg">Drag a Vyanjan</div>
             <button id="next-btn" class="hidden" onclick="moveNext()">Next →</button>
         </div>
@@ -136,18 +136,33 @@
         bridge.v = ""; bridge.m = "";
         document.getElementById('forge-circle').innerText = "?";
         document.getElementById('v-bank').innerHTML = "<h3>VYANJAN</h3>";
-        d.v.forEach(v => document.getElementById('v-bank').innerHTML += `<div class="tile" draggable="true" ondragstart="hDS('${v}','v')">${v}</div>`);
+        
+        d.v.forEach(v => document.getElementById('v-bank').innerHTML += `<div class="tile" draggable="true" ondragstart="hDS(event, '${v}','v')">${v}</div>`);
         document.getElementById('m-bank').innerHTML = "<h3>MATRA</h3>";
-        d.m.forEach(m => document.getElementById('m-bank').innerHTML += `<div class="tile m" draggable="true" ondragstart="hDS('${m}','m')">${m}</div>`);
+        d.m.forEach(m => document.getElementById('m-bank').innerHTML += `<div class="tile m" draggable="true" ondragstart="hDS(event, '${m}','m')">${m}</div>`);
+        
         const trayA = document.getElementById('tray-area');
         if(lvl == "2") {
             trayA.classList.remove('hidden'); document.getElementById('word-tray').innerHTML = "";
-            d.p.forEach(part => document.getElementById('word-tray').innerHTML += `<div class="slot" ondragover="e=>e.preventDefault()" ondrop="hTD(event, '${part}')">?</div>`);
+            d.p.forEach(part => document.getElementById('word-tray').innerHTML += `<div class="slot" ondragover="allowDrop(event)" ondrop="hTD(event, '${part}')">?</div>`);
         } else trayA.classList.add('hidden');
     }
 
-    function hDS(v, t) { bridge.dVal = v; bridge.dType = t; }
-    function handleForgeDrag(e) { bridge.dVal = bridge.v + bridge.m; bridge.dType = "f"; }
+    function allowDrop(e) {
+        e.preventDefault();
+    }
+
+    function hDS(e, v, t) { 
+        e.dataTransfer.setData('text/plain', v);
+        bridge.dVal = v; 
+        bridge.dType = t; 
+    }
+    
+    function handleForgeDrag(e) { 
+        e.dataTransfer.setData('text/plain', bridge.v + bridge.m);
+        bridge.dVal = bridge.v + bridge.m; 
+        bridge.dType = "f"; 
+    }
 
     function handleDrop(e) {
         e.preventDefault(); const c = document.getElementById('forge-circle'); c.classList.remove('shake');
@@ -161,21 +176,39 @@
         }
     }
 
+    // --- THE LEVEL 2 TRAY FIX ---
     function hTD(e, target) {
-        e.preventDefault(); const combo = bridge.v + bridge.m;
-        if (combo === target) {
-            e.target.innerText = combo; e.target.style.background = "rgba(74, 222, 128, 0.2)"; e.target.style.borderColor = "var(--green)";
+        e.preventDefault(); 
+        // Use bridge.dVal, which correctly identifies what is CURRENTLY being dragged (either from Bank or Forge)
+        const droppedText = bridge.dVal; 
+        
+        if (droppedText === target) {
+            e.target.innerText = droppedText; 
+            e.target.style.background = "rgba(74, 222, 128, 0.2)"; 
+            e.target.style.borderColor = "var(--green)";
+            
+            // Clear the forge so they can build the next part
+            bridge.v = ""; bridge.m = ""; 
+            document.getElementById('forge-circle').innerText = "?";
+            document.getElementById('msg').innerText = "Drag a Vyanjan";
+            
             const slots = [...document.querySelectorAll('.slot')];
             if (slots.every(s => s.innerText !== "?")) victory();
-            else { bridge.v = ""; bridge.m = ""; document.getElementById('forge-circle').innerText = "?"; }
-        } else { triggerError(e.target, true); document.getElementById('msg').innerText = "Wrong part!"; }
+        } else { 
+            triggerError(e.target, true); 
+            document.getElementById('msg').innerText = "Wrong part!"; 
+        }
     }
 
     function triggerError(el, wipe) {
         playSound('error'); el.classList.add('shake');
         setTimeout(() => {
             el.classList.remove('shake');
-            if(wipe) { bridge.v = ""; bridge.m = ""; document.getElementById('forge-circle').innerText = "?"; document.getElementById('msg').innerText = "Failed!"; }
+            if(wipe) { 
+                bridge.v = ""; bridge.m = ""; 
+                document.getElementById('forge-circle').innerText = "?"; 
+                document.getElementById('msg').innerText = "Failed!"; 
+            }
         }, 400);
     }
 
