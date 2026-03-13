@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hindi Varnamala Master</title>
+    <style>
+        :root {
+            --primary: #5c67e7;
+            --success: #00b894;
+            --gold: #f1c40f;
+            --bg: #f0f3f7;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        html, body { 
+            margin: 0; padding: 0; 
+            width: 100%; height: 100%; 
+            overflow: hidden; 
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            flex-direction: column;
+            touch-action: none;
+        }
+
+        header {
+            background: white;
+            padding: 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: 50px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .game-wrapper {
+            display: flex;
+            flex: 1;
+            gap: 10px;
+            padding: 10px;
+            width: 100%;
+            height: calc(100vh - 50px);
+            overflow: hidden;
+        }
+
+        #scrambled-zone, #answer-zone {
+            height: 100%;
+            overflow-y: auto;   
+            overflow-x: hidden; 
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        #scrambled-zone {
+            width: 35%;
+            background: #dfe6e9;
+            border: 2px dashed #b2bec3;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-content: flex-start;
+        }
+
+        #answer-zone {
+            width: 65%;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .row { 
+            display: flex; 
+            flex-wrap: nowrap; 
+            gap: 4px; 
+            align-items: center; 
+            padding: 8px 5px;
+            border-radius: 8px;
+            border: 1px solid #f1f2f6;
+            background: #fafbfc;
+            width: 100%;
+        }
+
+        .row-label { 
+            width: 65px; 
+            font-size: 0.6rem; 
+            font-weight: bold; 
+            color: #95a5a6; 
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .tile, .slot {
+            width: min(8.5vw, 55px); 
+            height: min(8.5vw, 55px);
+            border-radius: 6px;
+            flex-shrink: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tile {
+            background: var(--primary);
+            color: white;
+            cursor: grab;
+            font-weight: bold;
+            box-shadow: 0 3px 0 #3b44b1;
+            font-size: min(4.5vw, 24px);
+            user-select: none;
+            z-index: 10;
+        }
+
+        .slot { background: #f1f2f6; border: 1.5px solid #dfe6e9; }
+        .slot .tile { width: 100%; height: 100%; box-shadow: none; }
+        .tile.correct { background: var(--success); cursor: default; }
+        .row-complete { border-color: var(--gold); background: rgba(241, 196, 15, 0.05); }
+
+        @media (max-width: 700px) and (orientation: portrait) {
+            .game-wrapper { flex-direction: column; }
+            #scrambled-zone { width: 100%; height: 35%; }
+            #answer-zone { width: 100%; height: 65%; }
+            .tile, .slot { width: 11vw; height: 11vw; }
+            .tile { font-size: 5.5vw; }
+            .row-label { width: 55px; }
+        }
+
+        #modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
+        .modal { background: white; padding: 25px; border-radius: 15px; text-align: center; }
+        button { padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="font-weight: bold; font-size: 1rem;">हिन्दी Master</div>
+    <div style="display:flex; gap:8px; align-items:center;">
+        <select id="level-select" onchange="initGame()" style="font-size: 0.8rem;">
+            <option value="vowels">Vowels Only</option>
+            <option value="consonants">Consonants Only</option>
+            <option value="full" selected>Full Varnamala</option>
+        </select>
+        <div id="timer-display" style="font-weight: bold; font-size: 0.85rem; min-width: 60px; text-align: right;">0s</div>
+        <button onclick="initGame()" style="font-size: 0.8rem; padding: 4px 10px;">Reset</button>
+    </div>
+</header>
+
+<div class="game-wrapper">
+    <div id="scrambled-zone"></div>
+    <div id="answer-zone"></div>
+</div>
+
+<div id="modal-overlay">
+    <div class="modal">
+        <h1 style="color:var(--success)">शाबाश!</h1>
+        <p id="final-stats" style="margin-bottom: 20px; font-size: 1.1rem;"></p>
+        <button onclick="initGame()">Play Again</button>
+    </div>
+</div>
+
+<script>
+    const data = {
+        vowels: [
+            { label: "Vowels 1", letters: ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ऋ'] },
+            { label: "Vowels 2", letters: ['ए', 'ऐ', 'ओ', 'औ', 'अं', 'अः'] }
+        ],
+        consonants: [
+            { label: "Ka-Varga", letters: ['क', 'ख', 'ग', 'घ', 'ङ'] },
+            { label: "Cha-Varga", letters: ['च', 'छ', 'ज', 'झ', 'ञ'] },
+            { label: "Ta-Varga", letters: ['ट', 'ठ', 'ड', 'ढ', 'ण'] },
+            { label: "Tha-Varga", letters: ['त', 'थ', 'द', 'ध', 'न'] },
+            { label: "Pa-Varga", letters: ['प', 'फ', 'ब', 'भ', 'म'] },
+            { label: "Semi-Vowels", letters: ['य', 'र', 'ल', 'व'] },
+            { label: "Sibilants", letters: ['श', 'ष', 'स', 'ह'] },
+            { label: "Joint", letters: ['क्ष', 'त्र', 'ज्ञ', 'श्र'] }
+        ]
+    };
+
+    let seconds = 0, timerInt, totalNeeded = 0, currentCorrect = 0;
+
+    // --- NEW TIME FORMATTER ---
+    function formatTime(totalSeconds) {
+        const m = Math.floor(totalSeconds / 60);
+        const s = totalSeconds % 60;
+        return m > 0 ? `${m}m ${s}s` : `${s}s`;
+    }
+
+    function initGame() {
+        document.getElementById('modal-overlay').style.display = 'none';
+        clearInterval(timerInt);
+        seconds = 0; currentCorrect = 0;
+        document.getElementById('timer-display').innerText = "0s";
+        
+        // ⏱️ UPDATED INTERVAL LOGIC ⏱️
+        timerInt = setInterval(() => { 
+            seconds++; 
+            document.getElementById('timer-display').innerText = formatTime(seconds); 
+        }, 1000);
+
+        const level = document.getElementById('level-select').value;
+        const scrambled = document.getElementById('scrambled-zone');
+        const answer = document.getElementById('answer-zone');
+        scrambled.innerHTML = ''; answer.innerHTML = '';
+
+        let selected = (level === 'vowels') ? data.vowels : (level === 'consonants') ? data.consonants : [...data.vowels, ...data.consonants];
+        let allChars = [];
+
+        selected.forEach(group => {
+            const row = document.createElement('div');
+            row.className = 'row';
+            const label = document.createElement('div');
+            label.className = 'row-label';
+            label.innerText = group.label;
+            row.appendChild(label);
+            group.letters.forEach(char => {
+                allChars.push(char);
+                const slot = document.createElement('div');
+                slot.className = 'slot';
+                slot.dataset.expected = char;
+                slot.ondragover = e => e.preventDefault();
+                slot.ondrop = handleDrop;
+                row.appendChild(slot);
+            });
+            answer.appendChild(row);
+        });
+
+        totalNeeded = allChars.length;
+        allChars.sort(() => Math.random() - 0.5);
+        allChars.forEach(char => {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.innerText = char;
+            tile.draggable = true;
+            tile.id = 't-' + Math.random().toString(36).substr(2, 5);
+            tile.ondragstart = e => e.dataTransfer.setData("text", e.target.id);
+            tile.ontouchstart = handleTouchStart;
+            tile.ontouchmove = handleTouchMove;
+            tile.ontouchend = handleTouchEnd;
+            scrambled.appendChild(tile);
+        });
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const id = e.dataTransfer.getData("text");
+        const tile = document.getElementById(id);
+        const slot = e.target.closest('.slot');
+        if (slot && slot.dataset.expected === tile.innerText) { placeTile(tile, slot); }
+    }
+
+    function placeTile(tile, slot) {
+        slot.appendChild(tile);
+        tile.classList.add('correct');
+        tile.draggable = false;
+        tile.style.position = 'static';
+        currentCorrect++;
+        const row = slot.parentElement;
+        if ([...row.querySelectorAll('.slot')].every(s => s.querySelector('.tile.correct'))) row.classList.add('row-complete');
+        
+        if (currentCorrect === totalNeeded) {
+            clearInterval(timerInt);
+            // ⏱️ UPDATED VICTORY STATS ⏱️
+            document.getElementById('final-stats').innerText = `You finished in ${formatTime(seconds)}!`;
+            document.getElementById('modal-overlay').style.display = 'flex';
+        }
+    }
+
+    let activeTile = null;
+    function handleTouchStart(e) { if(!e.target.classList.contains('correct')) activeTile = e.target; }
+    function handleTouchMove(e) {
+        if (!activeTile) return;
+        let touch = e.touches[0];
+        activeTile.style.position = 'fixed';
+        activeTile.style.left = (touch.clientX - activeTile.offsetWidth / 2) + 'px';
+        activeTile.style.top = (touch.clientY - activeTile.offsetHeight / 2) + 'px';
+        activeTile.style.zIndex = 1000;
+    }
+    function handleTouchEnd(e) {
+        if (!activeTile) return;
+        let touch = e.changedTouches[0];
+        activeTile.style.display = 'none';
+        let target = document.elementFromPoint(touch.clientX, touch.clientY);
+        activeTile.style.display = 'flex';
+        let slot = target ? target.closest('.slot') : null;
+        if (slot && slot.dataset.expected === activeTile.innerText && !slot.hasChildNodes()) {
+            placeTile(activeTile, slot);
+        } else {
+            activeTile.style.position = 'static';
+            document.getElementById('scrambled-zone').appendChild(activeTile);
+        }
+        activeTile = null;
+    }
+
+    initGame();
+</script>
+</body>
+</html>
